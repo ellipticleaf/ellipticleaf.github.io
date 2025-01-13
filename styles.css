@@ -1,0 +1,80 @@
+h1, h2, h3, p, nav ul {
+    margin: 0;  
+    padding: 0;
+}
+
+body{
+    background-color: #fefaed;
+}
+
+/* Header */
+header{
+    display: flex;
+    justify-content: space-between;
+    padding: 1.5vw 3.5vw;
+    align-items: center;
+}
+
+header h1 a{
+    color: black;
+    text-decoration: none;
+    font-family: Anton SC;
+    /* NEW FONT */
+}
+
+header ul {
+    list-style-type: none;
+    display: flex;
+}
+
+header ul li a {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    margin-left: 3vw;
+    color: black;
+    font-size: x-large;
+}
+
+/* body */
+body main{
+    margin: auto;
+    margin-top: 7vw;
+}
+
+main{
+    justify-content: space-around;
+    max-width: 60vw;
+}
+
+.homepage{
+    display: flex;
+}
+
+main h1{
+    font-family: Playfair Display;
+    font-size: 5em;
+}
+
+main p{
+    font-size: 1.25em;
+    line-height: 1.75em;
+    font-family: Montserrat;
+    font-weight: 300;
+}
+
+main section{
+    max-width: 30vw;
+}
+
+/* Portfolio  */
+main aside h2{
+    /* border-bottom: 3px solid #8d8d8d; */
+    margin-bottom: 20px;
+}
+
+main aside section{
+    display: flex;
+    justify-content: space-between;
+    margin: 5px;
+}
