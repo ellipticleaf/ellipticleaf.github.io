@@ -1377,7 +1377,7 @@ html, body {
     <div class="settings-section">
       <div class="settings-label">Journal</div>
       <label class="settings-checkbox">
-        <input type="checkbox" id="toggle-journal" />
+        <input type="checkbox" id="toggle-journal" checked />
         <span>Show daily notes</span>
       </label>
     </div>
@@ -1385,11 +1385,11 @@ html, body {
     <div class="settings-section">
       <div class="settings-label">Display</div>
       <label class="settings-checkbox">
-        <input type="checkbox" id="toggle-streak" checked />
+        <input type="checkbox" id="toggle-streak" />
         <span>Show current streak</span>
       </label>
       <label class="settings-checkbox">
-        <input type="checkbox" id="toggle-month" checked />
+        <input type="checkbox" id="toggle-month" />
         <span>Show month completions</span>
       </label>
     </div>
@@ -1429,7 +1429,7 @@ html, body {
   let clockFormat = '12';     // '24' | '12'
   let darkMode = 'off';       // 'off' | 'system' | 'time'
   let completedBehavior = 'keep'; // 'keep' | 'bottom' | 'hide'
-  let showJournal = false;
+  let showJournal = true;
   let manualTheme = 'tan';
   let editingId = null;
 
