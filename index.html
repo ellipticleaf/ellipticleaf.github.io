@@ -51,6 +51,39 @@ html, body {
   padding: 7rem 8rem;
 }
 
+.cal-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.cal-month-label {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.cal-month-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  border-radius: var(--r);
+  cursor: pointer;
+  color: #1a1816;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.cal-month-btn:hover { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+
 /* ── LEFT: Calendar ───────────────────────────── */
 .cal-column {
   display: flex;
@@ -224,7 +257,7 @@ html, body {
   font-family: var(--font-mono);
   font-size: 15px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #1a1816;
   line-height: 1;
   width: 34px;
   height: 34px;
@@ -234,6 +267,7 @@ html, body {
   border-radius: 50%;
   flex-shrink: 0;
   transition: background 0.1s, color 0.1s;
+  background: #ffffff;
 }
 
 .cal-day.other-month .cal-day-num { color: var(--text-muted); }
@@ -245,8 +279,6 @@ html, body {
 }
 
 .cal-day.selected:not(.today) .cal-day-num {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
   background: var(--accent-light);
   color: var(--accent-text);
 }
@@ -263,12 +295,12 @@ html, body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent-mid);
-  opacity: 0.25;
-  transition: opacity 0.1s;
+  background: #1a1816;
+  opacity: 0.2;
+  transition: opacity 0.1s, background 0.1s;
 }
 
-.dot.done { opacity: 1; }
+.dot.done { opacity: 1; background: var(--accent); }
 
 /* Footer row */
 .cal-footer {
@@ -487,14 +519,14 @@ html, body {
 .habit-name {
   font-size: 14px;
   font-weight: 400;
-  color: var(--text-primary);
+  color: #1a1816;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: text;
 }
 
-.habit-name:hover { text-decoration: underline; text-decoration-color: var(--border-strong); }
+.habit-name:hover { text-decoration: underline; text-decoration-color: #b8b0a2; }
 
 .habit-card.done .habit-name { color: var(--done-text); }
 
@@ -860,6 +892,8 @@ html, body {
 .mini-cal-day.today:hover { background: var(--accent); opacity: 0.9; }
 .mini-cal-day.selected { background: var(--accent); color: #fff; }
 .mini-cal-day.selected:hover { background: var(--accent); }
+.mini-cal-day.disabled { opacity: 0.25; cursor: not-allowed; }
+.mini-cal-day.disabled:hover { background: none; }
 
 .mini-cal-footer {
   display: flex;
@@ -1197,6 +1231,11 @@ html, body {
   <!-- LEFT: Calendar -->
   <div class="cal-column">
     <aside class="cal-pane">
+      <div class="cal-month-nav">
+        <button class="cal-month-btn" id="prev-month">&#8249;</button>
+        <span class="cal-month-label" id="cal-month-label"></span>
+        <button class="cal-month-btn" id="next-month">&#8250;</button>
+      </div>
       <div class="cal-dow" id="cal-dow"></div>
 
       <div class="cal-grid" id="cal-grid"></div>
@@ -1409,11 +1448,11 @@ html, body {
     <div class="settings-section">
       <div class="settings-label">Display</div>
       <label class="settings-checkbox">
-        <input type="checkbox" id="toggle-streak" />
+        <input type="checkbox" id="toggle-streak" checked />
         <span>Show current streak</span>
       </label>
       <label class="settings-checkbox">
-        <input type="checkbox" id="toggle-month" />
+        <input type="checkbox" id="toggle-month" checked />
         <span>Show month completions</span>
       </label>
     </div>
@@ -1475,12 +1514,29 @@ html, body {
     localStorage.setItem('habit-tracker-v2', JSON.stringify({ habits, checks, journalEntries }));
   }
 
-  function calcStreak(hid) {
+  // Returns scheduled habit IDs for a given dateKey
+  function scheduledFor(dk) {
+    const d = new Date(dk + 'T12:00:00');
+    const dow = d.getDay();
+    return habits.filter(h => {
+      const isScheduled = !h.days || h.days.includes(dow);
+      const inRange = (!h.startDate || dk >= h.startDate) && (!h.endDate || dk <= h.endDate);
+      return isScheduled && inRange;
+    });
+  }
+
+  function allDone(dk) {
+    const sched = scheduledFor(dk);
+    return sched.length > 0 && sched.every(h => checks[h.id + ':' + dk]);
+  }
+
+  function calcStreak() {
     let s = 0;
     const base = new Date(todayKey + 'T12:00:00');
     for (let i = 0; i < 365; i++) {
       const d = new Date(base); d.setDate(base.getDate() - i);
-      if (checks[hid + ':' + dateKey(d)]) s++; else break;
+      const dk = dateKey(d);
+      if (allDone(dk)) s++; else break;
     }
     return s;
   }
@@ -1498,6 +1554,7 @@ html, body {
 
   function renderCalendar() {
     renderDow();
+    document.getElementById('cal-month-label').textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
     const grid = document.getElementById('cal-grid');
     grid.innerHTML = '';
 
@@ -1519,11 +1576,10 @@ html, body {
     let monthDone = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const dk = dateKey(new Date(viewYear, viewMonth, d));
-      habits.forEach(h => { if (checks[h.id+':'+dk]) monthDone++; });
+      if (allDone(dk)) monthDone++;
     }
     document.getElementById('stat-month').textContent = monthDone;
-    document.getElementById('stat-streak').textContent =
-      habits.length ? Math.max(...habits.map(h => calcStreak(h.id))) : 0;
+    document.getElementById('stat-streak').textContent = habits.length ? calcStreak() : 0;
   }
 
   function makeCell(date, other) {
@@ -1533,16 +1589,19 @@ html, body {
     if (dk === todayKey) el.classList.add('today');
     if (dk === selectedKey) el.classList.add('selected');
 
-    // Gradual green background based on completion ratio
+    // Full-background green blend — darker green as % of scheduled habits completed
     if (habits.length) {
-      const done = habits.filter(h => checks[h.id + ':' + dk]).length;
-      const ratio = done / habits.length;
-      if (ratio > 0) {
-        // Interpolate from white (#ffffff) toward green (#b7e4c7) based on ratio
-        const r = Math.round(255 + (183 - 255) * ratio);
-        const g = Math.round(255 + (228 - 255) * ratio);
-        const b = Math.round(255 + (199 - 255) * ratio);
-        el.style.background = `rgb(${r},${g},${b})`;
+      const sched = scheduledFor(dk);
+      if (sched.length > 0) {
+        const done = sched.filter(h => checks[h.id + ':' + dk]).length;
+        const ratio = done / sched.length;
+        if (ratio > 0) {
+          // Interpolate white → #40916c (accent-mid) based on ratio
+          const r = Math.round(255 + (64  - 255) * ratio);
+          const g = Math.round(255 + (145 - 255) * ratio);
+          const b = Math.round(255 + (108 - 255) * ratio);
+          el.style.background = `rgb(${r},${g},${b})`;
+        }
       }
     }
 
@@ -1554,7 +1613,9 @@ html, body {
     const bottomStack = document.createElement('div');
     bottomStack.className = 'cell-bottom-stack';
 
-    if (journalEntries[dk] && journalEntries[dk].trim()) {
+    const hasNote = !!(journalEntries[dk] && journalEntries[dk].trim());
+
+    if (hasNote) {
       const note = document.createElement('div');
       note.className = 'note-icon';
       note.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -1766,11 +1827,16 @@ html, body {
   function openEditDatePicker(which, id) {
     editPickerTargetId  = id;
     editPickerTargetEnd = (which === 'end');
-    pickerTarget = null; // disable regular picker
+    pickerTarget = null;
 
-    const inputId = which === 'start' ? `edit-start-date-${id}` : `edit-end-date-${id}`;
-    const wrapId  = which === 'start' ? `edit-start-wrap-${id}` : `edit-end-wrap-${id}`;
+    const inputId   = which === 'start' ? `edit-start-date-${id}` : `edit-end-date-${id}`;
+    const otherInputId = which === 'start' ? `edit-end-date-${id}`   : `edit-start-date-${id}`;
+    const wrapId    = which === 'start' ? `edit-start-wrap-${id}` : `edit-end-wrap-${id}`;
     const raw = document.getElementById(inputId).dataset.isoValue || '';
+    const otherRaw = document.getElementById(otherInputId).dataset.isoValue || '';
+    pickerConstraint = otherRaw
+      ? (which === 'start' ? { max: otherRaw } : { min: otherRaw })
+      : null;
     if (raw) {
       const d = new Date(raw + 'T12:00:00');
       pickerYear = d.getFullYear();
@@ -1811,27 +1877,34 @@ html, body {
       const isToday = dk === todayKey;
       const isSelected = dk === selectedIso;
       const showToday = isToday && (!selectedIso || isSelected);
+      const disabled = pickerConstraint
+        ? (pickerConstraint.max && dk > pickerConstraint.max) ||
+          (pickerConstraint.min && dk < pickerConstraint.min)
+        : false;
       const btn = document.createElement('button');
       btn.className = 'mini-cal-day' +
         (other ? ' other-month' : '') +
         (showToday ? ' today' : '') +
-        (isSelected ? ' selected' : '');
+        (isSelected ? ' selected' : '') +
+        (disabled ? ' disabled' : '');
       btn.textContent = date.getDate();
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        if (_editPickerInputId) {
-          const inp = document.getElementById(_editPickerInputId);
-          inp.dataset.isoValue = dk;
-          const d = new Date(dk + 'T12:00:00');
-          inp.value = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-          closeDatePicker();
-          _editPickerInputId = null;
-          editPickerTargetId = null;
-        } else {
-          selectPickerDate(dk);
-          closeDatePicker();
-        }
-      });
+      if (!disabled) {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          if (_editPickerInputId) {
+            const inp = document.getElementById(_editPickerInputId);
+            inp.dataset.isoValue = dk;
+            const d = new Date(dk + 'T12:00:00');
+            inp.value = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+            closeDatePicker();
+            _editPickerInputId = null;
+            editPickerTargetId = null;
+          } else {
+            selectPickerDate(dk);
+            closeDatePicker();
+          }
+        });
+      }
       return btn;
     };
 
@@ -1875,6 +1948,7 @@ html, body {
   let pickerTarget = null; // 'start' | 'end'
   let pickerYear = new Date().getFullYear();
   let pickerMonth = new Date().getMonth();
+  let pickerConstraint = null; // { min: 'YYYY-MM-DD' } or { max: 'YYYY-MM-DD' } or null
 
   function positionPopup(popup, anchorRect) {
     const popupH = popup.offsetHeight || 320; // estimated height before render
@@ -1899,8 +1973,13 @@ html, body {
     pickerTarget = target;
     _editPickerInputId = null;
     const inputId = target === 'start' ? 'habit-start-date' : 'habit-end-date';
+    const otherId  = target === 'start' ? 'habit-end-date'   : 'habit-start-date';
     const wrapId  = target === 'start' ? 'start-date-wrap'  : 'end-date-wrap';
     const raw = document.getElementById(inputId).dataset.isoValue || '';
+    const otherRaw = document.getElementById(otherId).dataset.isoValue || '';
+    pickerConstraint = otherRaw
+      ? (target === 'start' ? { max: otherRaw } : { min: otherRaw })
+      : null;
     if (raw) {
       const d = new Date(raw + 'T12:00:00');
       pickerYear = d.getFullYear();
@@ -1964,17 +2043,24 @@ html, body {
     const isToday = dk === todayKey;
     const isSelected = dk === selectedIso;
     const showToday = isToday && (!selectedIso || isSelected);
+    const disabled = pickerConstraint
+      ? (pickerConstraint.max && dk > pickerConstraint.max) ||
+        (pickerConstraint.min && dk < pickerConstraint.min)
+      : false;
     const btn = document.createElement('button');
     btn.className = 'mini-cal-day' +
       (other ? ' other-month' : '') +
       (showToday ? ' today' : '') +
-      (isSelected ? ' selected' : '');
+      (isSelected ? ' selected' : '') +
+      (disabled ? ' disabled' : '');
     btn.textContent = date.getDate();
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      selectPickerDate(dk);
-      closeDatePicker();
-    });
+    if (!disabled) {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        selectPickerDate(dk);
+        closeDatePicker();
+      });
+    }
     return btn;
   }
 
@@ -2041,6 +2127,15 @@ html, body {
   moreToggle.addEventListener('click', () => {
     const open = morePanel.classList.toggle('open');
     moreToggle.setAttribute('aria-expanded', String(open));
+    // Pre-fill start date with today if empty
+    if (open) {
+      const startInp = document.getElementById('habit-start-date');
+      if (!startInp.dataset.isoValue) {
+        startInp.dataset.isoValue = selectedKey;
+        const d = new Date(selectedKey + 'T12:00:00');
+        startInp.value = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+      }
+    }
   });
 
   // ── Day-of-week selector ────────────────────────────────
@@ -2069,7 +2164,7 @@ html, body {
     const name = inp.value.trim();
     if (!name) return;
     const days = getSelectedDays();
-    const startDate = document.getElementById('habit-start-date').dataset.isoValue || null;
+    const startDate = document.getElementById('habit-start-date').dataset.isoValue || selectedKey;
     const endDate = document.getElementById('habit-end-date').dataset.isoValue || null;
     habits.push({
       id: Date.now().toString(), name,
@@ -2086,6 +2181,16 @@ html, body {
     moreToggle.setAttribute('aria-expanded', 'false');
     save(); renderCalendar(); renderHabits();
   }
+  document.getElementById('prev-month').addEventListener('click', () => {
+    if (--viewMonth < 0) { viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+
+  document.getElementById('next-month').addEventListener('click', () => {
+    if (++viewMonth > 11) { viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+
   load(); renderCalendar(); renderHabits();
 
   // ── Settings: theme palettes ───────────────────────────
