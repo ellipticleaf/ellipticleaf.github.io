@@ -905,6 +905,30 @@ html, body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.feedback-btn {
+  position: fixed;
+  bottom: calc(2rem + 25px);
+  left: 2rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  z-index: 50;
+}
+
+.feedback-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
 /* ── Settings gear ─────────────────────────── */
 .settings-gear {
   position: fixed;
@@ -1288,7 +1312,7 @@ html, body {
   </div><!-- end .habits-column -->
 </div>
 
-<!-- Settings gear -->
+<a class="feedback-btn" href="https://forms.gle/PGDr3dDRosRs5nKt5" target="_blank" rel="noopener">Feedback</a>
 <button class="settings-gear" id="settings-gear" aria-label="Open settings" title="Settings">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="3"></circle>
